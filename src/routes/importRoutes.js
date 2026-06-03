@@ -26,8 +26,10 @@ importRoutes.post('/ws613', async (req, res) => {
     const result = await importarWs613(dataInicial, dataFinal);
     res.json({ ok: true, result });
   } catch (err) {
-    res.status(400).json({ ok: false, erro: err.message });
-  }
+  console.error('STATUS:', err.response?.status);
+  console.error('DATA:', err.response?.data);
+  throw new Error(JSON.stringify(err.response?.data || err.message));
+}
 });
 
 importRoutes.post('/tudo', async (req, res) => {
