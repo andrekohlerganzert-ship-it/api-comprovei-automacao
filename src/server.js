@@ -34,6 +34,44 @@ app.post('/admin/init-db', async (req, res) => {
   }
 });
 
+// TESTE WS204
+app.get('/teste-ws204', async (req, res) => {
+  try {
+
+    const response = await fetch(
+      'https://api.comprovei.com.br/api/1.1/documents/getStatus?key=' + req.query.key,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization':
+            'Basic ' +
+            Buffer.from(
+              `${process.env.COMPROVEI_USER}:${process.env.COMPROVEI_PASSWORD}`
+            ).toString('base64')
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    res.json({
+      ok: true,
+      status: response.status,
+      retorno: data
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      ok: false,
+      erro: error.message
+    });
+
+  }
+});
+
+
+
 app.use('/importar', importRoutes);
 app.use('/dados', dataRoutes);
 
