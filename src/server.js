@@ -34,6 +34,15 @@ app.post('/admin/init-db', async (req, res) => {
   }
 });
 
+// teste usuario
+
+app.get('/debug-comprovei', (req, res) => {
+  res.json({
+    COMPROVEI_USER: process.env.COMPROVEI_USER,
+    COMPROVEI_PASSWORD_EXISTE: !!process.env.COMPROVEI_PASSWORD,
+    tamanhoSenha: process.env.COMPROVEI_PASSWORD?.length || 0
+  });
+});
 
 // TESTE WS204
 app.get('/teste-ws204', async (req, res) => {
