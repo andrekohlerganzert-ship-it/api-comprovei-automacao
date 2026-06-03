@@ -37,26 +37,28 @@ async function chamarComprovei({ ws, dataInicial, dataFinal }) {
       };
 
   const payload = {
-    headers: credentials(),
-    body: {
-      formato_exportacao: 'csv',
-      filtros,
-      campos
-    }
-  };
-
-  console.log('URL:', config.url);
-console.log('PAYLOAD:', JSON.stringify(payload, null, 2));
-
-  
- const { data } = await axios.post(config.url, payload, {
-  timeout: 120000,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'User-Agent': 'PostmanRuntime/7.43.0'
+  body: {
+    formato_exportacao: 'csv',
+    filtros,
+    campos
   }
-});
+};
+
+const { data } = await axios.post(
+  config.url,
+  payload,
+  {
+    timeout: 120000,
+    auth: {
+      username: process.env.COMPROVEI_USER,
+      password: process.env.COMPROVEI_PASSWORD
+    },
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  }
+);
 
   const body = data?.body || data;
   const urlArquivo = body?.user_message || body?.url || body?.response_data;
