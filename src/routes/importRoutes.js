@@ -20,52 +20,6 @@ importRoutes.post('/ws601', async (req, res) => {
   }
 });
 
-
-router.post('/ws613', async (req, res) => {
-  try {
-
-    const { data_inicial, data_final } = req.body;
-
-    const response = await fetch(
-      'https://console-api.comprovei.com/exports/documentSAC',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          headers: {
-            username: process.env.COMPROVEI_USER,
-            password: process.env.COMPROVEI_PASSWORD
-          },
-          body: {
-            formato_exportacao: 'json',
-            filtros: {
-              data_inicial,
-              data_final
-            }
-          }
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    res.json({
-      ok: true,
-      retorno: data
-    });
-
-  } catch (error) {
-
-    res.status(500).json({
-      ok: false,
-      erro: error.message
-    });
-
-  }
-});
-
 importRoutes.post('/ws613', async (req, res) => {
   try {
     const { dataInicial, dataFinal } = periodo(req);
