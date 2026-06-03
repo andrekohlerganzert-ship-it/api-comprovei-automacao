@@ -73,6 +73,56 @@ app.get('/teste-ws204', async (req, res) => {
 
 
 app.use('/importar', importRoutes);
+app.post('/teste-ws613-bruto', async (req, res) => {
+  try {
+    const { data_inicial, data_final } = req.body;
+
+    const response = await fetch(
+      'https://console-api.comprovei.com/exports/documentSAC',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          headers: {
+            username: process.env.COMPROVEI_USER,
+            password: process.env.COMPROVEI_PASSWORD
+          },
+          body: {
+            formato_exportacao: 'csv',
+            filtros: {
+              data_inicial,
+              data_final,
+              data_emissao_inicial: data_inicial,
+              data_emissao_final: data_final,
+              data_rota_inicial: data_inicial,
+              data_rota_final: data_final,
+              excluir_transbordos: false
+            },
+            campos: ['Documento', 'Emissão', 'Status', 'Chave', 'Rota/Roteiro']
+          }
+        })
+      }
+    );
+
+    const texto = await response.text();
+
+    res.json({
+      ok: response.ok,
+      status: response.status,
+      retorno: texto
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      erro: err.message
+    });
+  }
+});
+
+
+
+
 app.use('/dados', dataRoutes);
 
 const port = process.env.PORT || 3000;
