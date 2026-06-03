@@ -34,6 +34,7 @@ app.post('/admin/init-db', async (req, res) => {
   }
 });
 
+
 // TESTE WS204
 app.get('/teste-ws204', async (req, res) => {
   try {
