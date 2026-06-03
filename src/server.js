@@ -5,7 +5,7 @@ import { initDb } from './sql/initDb.js';
 import { importRoutes } from './routes/importRoutes.js';
 import { dataRoutes } from './routes/dataRoutes.js';
 import { startScheduler } from './jobs/scheduler.js';
-
+  
 dotenv.config();
 
 const app = express();
