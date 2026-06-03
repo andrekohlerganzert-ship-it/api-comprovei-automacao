@@ -304,6 +304,151 @@ app.get('/teste-ws204', async (req, res) => {
   }
 });
 
+app.get('/nfes', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>NF-es Comprovei</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 25px;
+    }
+
+    h1 {
+      color: #003366;
+    }
+
+    .filtros {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+
+    input, button {
+      padding: 8px;
+      margin: 5px;
+    }
+
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th {
+      background: #003366;
+      color: white;
+      padding: 10px;
+      text-align: left;
+    }
+
+    td {
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    tr:hover {
+      background: #f1f1f1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>NF-es Importadas - WS613</h1>
+
+  <div class="filtros">
+    <label>Data inicial:</label>
+    <input type="date" id="data_inicial">
+
+    <label>Data final:</label>
+    <input type="date" id="data_final">
+
+    <button onclick="carregarNfes()">Pesquisar</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Documento</th>
+        <th>Chave</th>
+        <th>Emissão</th>
+        <th>Cliente</th>
+        <th>Cidade</th>
+        <th>UF</th>
+        <th>Status</th>
+        <th>Motorista</th>
+        <th>Placa</th>
+        <th>Rota</th>
+      </tr>
+    </thead>
+    <tbody id="tabela"></tbody>
+  </table>
+
+<script>
+async function carregarNfes() {
+  const dataInicial = document.getElementById('data_inicial').value;
+  const dataFinal = document.getElementById('data_final').value;
+
+  let url = '/dados/documentos?limit=5000';
+
+  if (dataInicial) {
+    url += '&data_inicial=' + dataInicial;
+  }
+
+  if (dataFinal) {
+    url += '&data_final=' + dataFinal;
+  }
+
+  const response = await fetch(url);
+  const data = await response.json();
+
+  const tabela = document.getElementById('tabela');
+  tabela.innerHTML = '';
+
+  data.rows.forEach(nfe => {
+    tabela.innerHTML += \`
+      <tr>
+        <td>\${nfe.documento || ''}</td>
+        <td>\${nfe.chave || ''}</td>
+        <td>\${nfe.emissao || ''}</td>
+        <td>\${nfe.cliente || ''}</td>
+        <td>\${nfe.cidade_destino || ''}</td>
+        <td>\${nfe.uf_destino || ''}</td>
+        <td>\${nfe.status_documento || ''}</td>
+        <td>\${nfe.motorista || ''}</td>
+        <td>\${nfe.placa || ''}</td>
+        <td>\${nfe.rota_roteiro || ''}</td>
+      </tr>
+    \`;
+  });
+}
+
+carregarNfes();
+</script>
+
+</body>
+</html>
+  `);
+});
+
+
 app.use('/importar', importRoutes);
 app.use('/dados', dataRoutes);
 
