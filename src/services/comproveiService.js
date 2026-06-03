@@ -45,6 +45,8 @@ async function chamarComprovei({ ws, dataInicial, dataFinal }) {
     }
   };
 
+  console.log('URL:', config.url);
+console.log('PAYLOAD:', JSON.stringify(payload, null, 2));
   const { data } = await axios.post(config.url, payload, {
     timeout: 120000,
     headers: { 'Content-Type': 'application/json' }
