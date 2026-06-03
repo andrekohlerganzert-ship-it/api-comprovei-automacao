@@ -1,16 +1,40 @@
+// Importa o axios, usado para fazer chamadas HTTP
 import axios from 'axios';
+
+// Importa as URLs das APIs WS601 e WS613
 import { COMPROVEI } from '../config/comprovei.js';
+
+// Função que extrai CSV de dentro de arquivo ZIP
 import { extractFirstCsvFromZip } from '../utils/zip.js';
+
+// Função que transforma CSV em array de objetos
 import { parseCsv } from '../utils/csv.js';
 
+
+// Campos que serão solicitados na exportação WS601
 const WS601_CAMPOS = [
-  'Data','CD','Rota/Roteiro','Código Motorista','Motorista','Placa','Código Transportadora','Transportadora','Tipo de Veículo','Status','Qtd. Paradas','Qtd. Documentos','Qtd. Volumes','Peso Líq. Total','Peso Bruto Total','Peso Líq. Pendente','Peso Bruto Pendente','Início Planejado','Fim Planejado','Em Trânsito','Última Ocorrência','Chegada na Base','Documentos Entregues/Coletados','Documentos não Entregues/Coletados','Documentos não Apontados','Nome','Destino','Tipo de Rota','Justificativa Saída','Resp. Just. Saída','Justificativa Chegada','Resp. Just. Chegada','Justificativa Cancelamento','Justificativa Retorno Base','Distância Estimada (Km)','Distância Percorrida (Km)','Base Origem','Base Destino','Ajustes Manuais','Tipo Carga','No. Embarcadores','Embarcadores','Aparelhos','Tipo','Valor','URL','Email Rotas Sem Sincronia','Regional','Classificação','Campo livre 1','Campo livre 2','Campo livre 3','Campo livre 4','Campo livre 5','Cód. Frota','Data de Criação'
+  'Data',
+  'CD',
+  'Rota/Roteiro',
+  'Motorista',
+  'Placa',
+  'Status'
 ];
 
+
+// Campos que serão solicitados na exportação WS613
 const WS613_CAMPOS = [
-  'Documento','Emissão','CNPJ Embarcador','Embarcador','Região','Modelo','CNPJ Cliente','Código Cliente','Código Int Cliente','Tipo','Cliente','Cidade Destino','UF Destino','Data Finalização','Ultima Ocorrência','Status','Data Pagamento','Data Agendamento','Qtd Reentregas','Qtd Paradas','Chave','Valor','Volume','Qtd volumes','Conferidos','Rota/Roteiro','Motorista','Cód. Motorista','Placa','Data da rota','Transportadora','CNPJ Transp.','Data Últ. Ocorr.','Gerente Cód.','Gerente Nome','Gerente Email','Gerente Tel.','Supervisor Cód.','Supervisor Nome','Supervisor Email','Supervisor Tel.','Gerente Sênior Cód.','Gerente Sênior Nome','Gerente Sênior Email','Gerente Sênior Tel.','Vendedor Cód.','Vendedor Nome','Vendedor Email','Vendedor Tel.','Pedido','Base Origem','Base Destino','Prazo SLA','Status SLA','Tipo de Frete','Modal','Data Atualização','AWB','Remessa','Possui Foto','Performance SLA','Justificativa','Acatado','Comentário da Justificativa','Chegada Cliente','Ajuste Manual','Horario Ajuste Manual','Usuário Ajuste Manual','Código IBGE Cidade','BU','CFOP','Campo Livre 1','Campo Livre 2','Campo Livre 3','Campo Livre 4','Campo Livre 5','Email SLA Atrasado','Serie','Peso','Endereco','Bairro','Estado','CEP','País','Prazo de Entrega','Cliente Email','Regional','Tipo Parada','regiaoUF','Grupo transportadora','Previsão de Entrega','Data de Integração','Baixa Terceiros','Anotações','Tracking','Horário Início Planejado Rota','Horário Início Rota','Horário Finalização Planejada Rota','Horário Finalização Rota','Tempo Permanência Cliente','Tempo Viagem','Tempo Viagem e Permanência','Latitude Chegada Cliente','Longitude Chegada Cliente'
+  'Documento',
+  'Emissão',
+  'Status',
+  'Chave',
+  'Rota/Roteiro',
+  'Motorista',
+  'Placa'
 ];
 
+
+// Valida se usuário e senha existem no Railway
 function credentials() {
   if (!process.env.COMPROVEI_USER || !process.env.COMPROVEI_PASSWORD) {
     throw new Error('Configure COMPROVEI_USER e COMPROVEI_PASSWORD nas variáveis do Railway');
@@ -22,22 +46,31 @@ function credentials() {
   };
 }
 
+
+// Função principal que chama WS601 ou WS613
 async function chamarComprovei({ ws, dataInicial, dataFinal }) {
+
+  // Busca a configuração da API no arquivo config/comprovei.js
   const config = COMPROVEI[ws.toLowerCase()];
 
+  // Se não achar a URL da API, gera erro
   if (!config?.url) {
     throw new Error(`Configuração da ${ws} não encontrada`);
   }
 
+  // Escolhe os campos conforme a API chamada
   const campos = ws === 'WS601' ? WS601_CAMPOS : WS613_CAMPOS;
 
+  // Monta os filtros de data
   const filtros =
     ws === 'WS601'
       ? {
+          // WS601 usa filtro simples
           data_inicial: dataInicial,
           data_final: dataFinal
         }
       : {
+          // WS613 precisa de filtros mais completos
           data_inicial: dataInicial,
           data_final: dataFinal,
           data_emissao_inicial: dataInicial,
@@ -50,6 +83,7 @@ async function chamarComprovei({ ws, dataInicial, dataFinal }) {
   let payload;
   let axiosConfig;
 
+  // WS613 usa Basic Auth, igual ao Postman
   if (ws === 'WS613') {
     payload = {
       formato_exportacao: 'csv',
@@ -69,6 +103,8 @@ async function chamarComprovei({ ws, dataInicial, dataFinal }) {
       }
     };
   } else {
+
+    // WS601 usa usuário/senha dentro do JSON
     payload = {
       headers: credentials(),
       body: {
@@ -90,14 +126,21 @@ async function chamarComprovei({ ws, dataInicial, dataFinal }) {
   let data;
 
   try {
+    // Envia o POST para a Comprovei
     const response = await axios.post(config.url, payload, axiosConfig);
+
+    // Guarda o retorno da API
     data = response.data;
+
   } catch (err) {
+
+    // Log detalhado para ver erro no Railway
     console.error('Erro Comprovei');
     console.error('WS:', ws);
     console.error('URL:', config.url);
     console.error('STATUS:', err.response?.status);
     console.error('DATA:', err.response?.data);
+
     throw new Error(
       typeof err.response?.data === 'string'
         ? err.response.data
@@ -105,13 +148,16 @@ async function chamarComprovei({ ws, dataInicial, dataFinal }) {
     );
   }
 
+  // Algumas APIs retornam os dados em data.body, outras direto em data
   const body = data?.body || data;
 
+  // Pega a URL do arquivo gerado
   const urlArquivo =
     body?.user_message ||
     body?.url ||
     body?.response_data;
 
+  // Se não tiver URL, para o processo
   if (!urlArquivo || typeof urlArquivo !== 'string' || !urlArquivo.startsWith('http')) {
     const msg =
       body?.message ||
@@ -122,6 +168,7 @@ async function chamarComprovei({ ws, dataInicial, dataFinal }) {
     throw new Error(msg);
   }
 
+  // Baixa o arquivo retornado pela Comprovei
   const fileResponse = await axios.get(urlArquivo, {
     responseType: 'arraybuffer',
     timeout: 120000
@@ -129,22 +176,29 @@ async function chamarComprovei({ ws, dataInicial, dataFinal }) {
 
   let csvBuffer;
 
+  // Verifica se o arquivo é ZIP ou CSV direto
   const contentType = fileResponse.headers['content-type'] || '';
 
   if (contentType.includes('zip') || urlArquivo.toLowerCase().includes('.zip')) {
+    // Se for ZIP, extrai o primeiro CSV
     csvBuffer = extractFirstCsvFromZip(Buffer.from(fileResponse.data));
   } else {
+    // Se for CSV direto, usa o próprio arquivo
     csvBuffer = Buffer.from(fileResponse.data);
   }
 
+  // Converte o CSV para array de objetos
   const rows = parseCsv(csvBuffer);
 
+  // Retorna as linhas e a URL do arquivo
   return {
     rows,
     urlArquivo
   };
 }
 
+
+// Função pública para importar WS601
 export async function exportarWs601(dataInicial, dataFinal) {
   return chamarComprovei({
     ws: 'WS601',
@@ -153,6 +207,8 @@ export async function exportarWs601(dataInicial, dataFinal) {
   });
 }
 
+
+// Função pública para importar WS613
 export async function exportarWs613(dataInicial, dataFinal) {
   return chamarComprovei({
     ws: 'WS613',
