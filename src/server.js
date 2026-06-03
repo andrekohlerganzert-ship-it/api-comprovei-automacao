@@ -17,7 +17,7 @@ app.get('/', async (req, res) => {
     res.json({
       ok: true,
       sistema: 'API Comprovei WS601 + WS613',
-      banco: db,
+      banco: db, 
       endpoints: ['/admin/init-db', '/importar/ws601', '/importar/ws613', '/importar/tudo', '/dados/rotas', '/dados/documentos', '/dados/historico']
     });
   } catch (err) {
