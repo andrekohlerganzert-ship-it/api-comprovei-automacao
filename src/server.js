@@ -22,7 +22,7 @@ app.get('/', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ ok: false, erro: err.message });
-  }
+  } 
 });
 
 app.post('/admin/init-db', async (req, res) => {
