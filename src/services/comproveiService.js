@@ -13,8 +13,9 @@ const WS613_CAMPOS = [
 
 function credentials() {
   if (!process.env.COMPROVEI_USER || !process.env.COMPROVEI_PASSWORD) {
-    throw new Error('Configure COMPROVEI_USER e COMPROVEI_PASSWORD nas variaveis do Railway');
+    throw new Error('Configure COMPROVEI_USER e COMPROVEI_PASSWORD nas variáveis do Railway');
   }
+
   return {
     username: process.env.COMPROVEI_USER,
     password: process.env.COMPROVEI_PASSWORD
@@ -23,47 +24,101 @@ function credentials() {
 
 async function chamarComprovei({ ws, dataInicial, dataFinal }) {
   const config = COMPROVEI[ws.toLowerCase()];
+
+  if (!config?.url) {
+    throw new Error(`Configuração da ${ws} não encontrada`);
+  }
+
   const campos = ws === 'WS601' ? WS601_CAMPOS : WS613_CAMPOS;
-  const filtros = ws === 'WS601'
-    ? { data_inicial: dataInicial, data_final: dataFinal }
-    : {
-        data_inicial: dataInicial,
-        data_final: dataFinal,
-        data_emissao_inicial: dataInicial,
-        data_emissao_final: dataFinal,
-        data_rota_inicial: dataInicial,
-        data_rota_final: dataFinal,
-        excluir_transbordos: false
-      };
 
-  const payload = {
-  body: {
-    formato_exportacao: 'csv',
-    filtros,
-    campos
-  }
-};
+  const filtros =
+    ws === 'WS601'
+      ? {
+          data_inicial: dataInicial,
+          data_final: dataFinal
+        }
+      : {
+          data_inicial: dataInicial,
+          data_final: dataFinal,
+          data_emissao_inicial: dataInicial,
+          data_emissao_final: dataFinal,
+          data_rota_inicial: dataInicial,
+          data_rota_final: dataFinal,
+          excluir_transbordos: false
+        };
 
-const { data } = await axios.post(
-  config.url,
-  payload,
-  {
-    timeout: 120000,
-    auth: {
-      username: process.env.COMPROVEI_USER,
-      password: process.env.COMPROVEI_PASSWORD
-    },
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    }
+  let payload;
+  let axiosConfig;
+
+  if (ws === 'WS613') {
+    payload = {
+      formato_exportacao: 'csv',
+      filtros,
+      campos
+    };
+
+    axiosConfig = {
+      timeout: 120000,
+      auth: {
+        username: process.env.COMPROVEI_USER,
+        password: process.env.COMPROVEI_PASSWORD
+      },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      }
+    };
+  } else {
+    payload = {
+      headers: credentials(),
+      body: {
+        formato_exportacao: 'csv',
+        filtros,
+        campos
+      }
+    };
+
+    axiosConfig = {
+      timeout: 120000,
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      }
+    };
   }
-);
+
+  let data;
+
+  try {
+    const response = await axios.post(config.url, payload, axiosConfig);
+    data = response.data;
+  } catch (err) {
+    console.error('Erro Comprovei');
+    console.error('WS:', ws);
+    console.error('URL:', config.url);
+    console.error('STATUS:', err.response?.status);
+    console.error('DATA:', err.response?.data);
+    throw new Error(
+      typeof err.response?.data === 'string'
+        ? err.response.data
+        : JSON.stringify(err.response?.data || err.message)
+    );
+  }
 
   const body = data?.body || data;
-  const urlArquivo = body?.user_message || body?.url || body?.response_data;
+
+  const urlArquivo =
+    body?.user_message ||
+    body?.url ||
+    body?.response_data;
+
   if (!urlArquivo || typeof urlArquivo !== 'string' || !urlArquivo.startsWith('http')) {
-    const msg = body?.message || body?.internal_message || 'Comprovei nao retornou URL do arquivo';
+    const msg =
+      body?.message ||
+      body?.internal_message ||
+      body?.user_message ||
+      'Comprovei não retornou URL do arquivo';
+
     throw new Error(msg);
   }
 
@@ -73,7 +128,9 @@ const { data } = await axios.post(
   });
 
   let csvBuffer;
+
   const contentType = fileResponse.headers['content-type'] || '';
+
   if (contentType.includes('zip') || urlArquivo.toLowerCase().includes('.zip')) {
     csvBuffer = extractFirstCsvFromZip(Buffer.from(fileResponse.data));
   } else {
@@ -81,13 +138,25 @@ const { data } = await axios.post(
   }
 
   const rows = parseCsv(csvBuffer);
-  return { rows, urlArquivo };
+
+  return {
+    rows,
+    urlArquivo
+  };
 }
 
 export async function exportarWs601(dataInicial, dataFinal) {
-  return chamarComprovei({ ws: 'WS601', dataInicial, dataFinal });
+  return chamarComprovei({
+    ws: 'WS601',
+    dataInicial,
+    dataFinal
+  });
 }
 
 export async function exportarWs613(dataInicial, dataFinal) {
-  return chamarComprovei({ ws: 'WS613', dataInicial, dataFinal });
+  return chamarComprovei({
+    ws: 'WS613',
+    dataInicial,
+    dataFinal
+  });
 }
