@@ -49,14 +49,17 @@ importRoutes.post('/teste-ws613-bruto', async (req, res) => {
             ).toString('base64')
         },
         body: JSON.stringify({
-          body: {
-            formato_exportacao: 'csv',
-            filtros: {
-              data_inicial,
-              data_final
-            },
-            campos: ['Documento', 'Emissão', 'Status', 'Chave']
-          }
+          formato_exportacao: 'csv',
+          filtros: {
+            data_inicial,
+            data_final,
+            data_emissao_inicial: data_inicial,
+            data_emissao_final: data_final,
+            data_rota_inicial: data_inicial,
+            data_rota_final: data_final,
+            excluir_transbordos: false
+          },
+          campos: ['Documento', 'Emissão', 'Status', 'Chave']
         })
       }
     );
