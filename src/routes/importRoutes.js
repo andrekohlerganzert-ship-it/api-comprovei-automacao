@@ -32,6 +32,53 @@ importRoutes.post('/ws613', async (req, res) => {
 }
 });
 
+importRoutes.post('/teste-ws613-bruto', async (req, res) => {
+  try {
+    const { data_inicial, data_final } = req.body;
+
+    const response = await fetch(
+      'https://console-api.comprovei.com/exports/documentSAC',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization':
+            'Basic ' +
+            Buffer.from(
+              `${process.env.COMPROVEI_USER}:${process.env.COMPROVEI_PASSWORD}`
+            ).toString('base64')
+        },
+        body: JSON.stringify({
+          body: {
+            formato_exportacao: 'csv',
+            filtros: {
+              data_inicial,
+              data_final
+            },
+            campos: ['Documento', 'Emissão', 'Status', 'Chave']
+          }
+        })
+      }
+    );
+
+    const texto = await response.text();
+
+    res.json({
+      ok: response.ok,
+      status: response.status,
+      retorno: texto
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      erro: err.message
+    });
+  }
+});
+
+
+
 importRoutes.post('/tudo', async (req, res) => {
   try {
     const { dataInicial, dataFinal } = periodo(req);
